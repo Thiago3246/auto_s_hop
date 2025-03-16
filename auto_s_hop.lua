@@ -57,30 +57,24 @@ local function getAvailableServers()
         local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", PlaceId)
         print("[DEBUG] Obtendo lista de servidores de:", url)
 
-        local success, response, rawResponse = pcall(function()
+        local success, response = pcall(function()
             local res = game:HttpGet(url)
-            return HttpService:JSONDecode(res), res
+            return HttpService:JSONDecode(res)
         end)
 
-        if success and response and response[1] and response[1].data then
-            print("[DEBUG] Servidores obtidos com sucesso! Quantidade de servidores:", #response[1].data)
-            return response[1].data
-        else
-            print("[ERRO] Falha ao obter servidores!")
-            print("[ERRO] Resposta bruta da API:\n", rawResponse)
-
-            if not success then
-                warn("[ERRO] A solicitação HTTP falhou. Pode ser bloqueio da API ou problema no exploit.")
-            elseif not response then
-                warn("[ERRO] Resposta vazia da API.")
-            elseif rawResponse then
-                warn("[ERRO] Conteúdo recebido da API:", rawResponse)
+        if success and response then
+            if response.data and type(response.data) == "table" then
+                print("[DEBUG] Servidores obtidos com sucesso! Quantidade de servidores:", #response.data)
+                return response.data
             else
-                warn("[ERRO] Resposta da API não contém 'data'. Estrutura inesperada.")
+                warn("[ERRO] A resposta da API não contém 'data' ou não é uma tabela válida.")
+                print("[ERRO] Resposta completa da API:\n", HttpService:JSONEncode(response))
             end
-
-            task.wait(2) 
+        else
+            warn("[ERRO] Falha na requisição HTTP. A API pode estar bloqueando.")
         end
+
+        task.wait(2)
     end
 end
 
