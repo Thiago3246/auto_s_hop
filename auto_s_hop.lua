@@ -21,7 +21,7 @@ local PlaceId = game.PlaceId
 local currentJobId = game.JobId
 
 -- URL onde seu script está hospedado (substitua pela URL real)
-local teleportScriptURL = "https://raw.githubusercontent.com/YourUsername/YourRepo/main/yourScript.lua"
+local teleportScriptURL = "https://raw.githubusercontent.com/Thiago3246/auto_s_hop/refs/heads/main/auto_s_hop.lua"
 
 -- Função para enfileirar o script para execução após o teleporte
 local function queueScriptOnTeleport()
