@@ -58,12 +58,13 @@ local function getAvailableServers()
         print("[DEBUG] Obtendo lista de servidores de:", url)
 
         local success, response = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(url))
+            local res = game:HttpGet(url)
+            return HttpService:JSONDecode(res), res
         end)
 
-        if success and response and response.data and #response.data > 0 then
-            print("[DEBUG] Servidores obtidos com sucesso! Quantidade de servidores:", #response.data)
-            return response.data
+        if success and response and response[1] and response[1].data then
+            print("[DEBUG] Servidores obtidos com sucesso! Quantidade de servidores:", #response[1].data)
+            return response[1].data
         else
             print("[ERRO] Falha ao obter servidores!")
 
@@ -71,13 +72,13 @@ local function getAvailableServers()
                 warn("[ERRO] Falha na requisição HTTP. Possível motivo: Exploit incompatível ou falha na API.")
             elseif not response then
                 warn("[ERRO] Resposta vazia da API.")
-            elseif not response.data then
+            elseif response[2] then
+                warn("[ERRO] Resposta completa da API:\n", response[2])
+            else
                 warn("[ERRO] Resposta da API não contém 'data'. Estrutura inesperada.")
-            elseif #response.data == 0 then
-                warn("[ERRO] Nenhum servidor disponível retornado pela API.")
             end
             
-            task.wait(1)
+            task.wait(2)
         end
     end
 end
