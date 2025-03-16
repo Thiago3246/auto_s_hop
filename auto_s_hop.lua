@@ -8,8 +8,12 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Definir o nome do jogador antes de rodar o script
 local playerNameToFind = getgenv().PlayerName
+
+if not playerNameToFind or playerNameToFind == "" then
+    warn("Erro: Você deve definir getgenv().PlayerName antes de rodar o script!")
+    return
+end
 
 local checkInterval = 3
 local recheckDelay = 5
@@ -49,30 +53,39 @@ local function findPlayer()
     return false
 end
 
-local function serverHop()
-    local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", PlaceId)
-    local success, response = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(url))
-    end)
+local function getAvailableServers()
+    while true do
+        local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", PlaceId)
+        local success, response = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(url))
+        end)
 
-    if success and response and response.data then
-        for _, server in ipairs(response.data) do
-            if server.id ~= currentJobId then
-                queueScriptOnTeleport()
-                
-                local teleportSuccess, errorMsg = pcall(function()
-                    TeleportService:TeleportToPlaceInstance(PlaceId, server.id, LocalPlayer)
-                end)
-                
-                if teleportSuccess then
-                    return
-                else
-                    warn("Erro ao teleportar: " .. errorMsg)
-                end
+        if success and response and response.data and #response.data > 0 then
+            return response.data
+        else
+            warn("Erro ao obter servidores. Tentando novamente...")
+            task.wait(1)
+        end
+    end
+end
+
+local function serverHop()
+    local servers = getAvailableServers()
+
+    for _, server in ipairs(servers) do
+        if server.id ~= currentJobId then
+            queueScriptOnTeleport()
+            
+            local teleportSuccess, errorMsg = pcall(function()
+                TeleportService:TeleportToPlaceInstance(PlaceId, server.id, LocalPlayer)
+            end)
+            
+            if teleportSuccess then
+                return
+            else
+                warn("Erro ao teleportar: " .. errorMsg)
             end
         end
-    else
-        warn("Erro ao obter servidores")
     end
 end
 
@@ -85,13 +98,13 @@ local function checkForPlayer()
             found = true
             break
         end
-        wait(0.5)
+        task.wait(0.5)
     end
 
     if not found then
         serverHop()
 
-        wait(recheckDelay)
+        task.wait(recheckDelay)
         if game.JobId == currentJobId then
             warn("Ainda no mesmo servidor após teleportar. Tentando novamente...")
             serverHop()
