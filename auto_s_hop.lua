@@ -8,12 +8,13 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-local playerNameToFind = getgenv().PlayerName
-
-if not playerNameToFind or playerNameToFind == "" then
+-- Se o PlayerName ainda não foi definido após um teleporte, recupera da queue_on_teleport
+if not getgenv().PlayerName or getgenv().PlayerName == "" then
     warn("Erro: Você deve definir getgenv().PlayerName antes de rodar o script!")
     return
 end
+
+local playerNameToFind = getgenv().PlayerName
 
 local checkInterval = 3
 local recheckDelay = 5
@@ -24,7 +25,7 @@ local PlaceId = game.PlaceId
 local currentJobId = game.JobId
 
 local function queueScriptOnTeleport()
-    queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/Thiago3246/auto_s_hop/refs/heads/main/auto_s_hop.lua', true))()")
+    queue_on_teleport("getgenv().PlayerName = '" .. playerNameToFind .. "'\nloadstring(game:HttpGet('https://raw.githubusercontent.com/Thiago3246/auto_s_hop/refs/heads/main/auto_s_hop.lua', true))()")
 end
 
 local function showMessage(text)
