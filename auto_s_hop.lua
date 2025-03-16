@@ -8,16 +8,14 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Se o PlayerName ainda não foi definido após um teleporte, recupera da queue_on_teleport
 if not getgenv().PlayerName or getgenv().PlayerName == "" then
-    warn("Erro: Você deve definir getgenv().PlayerName antes de rodar o script!")
+    warn("[Erro] Você deve definir getgenv().PlayerName antes de rodar o script!")
     return
 end
 
 local playerNameToFind = getgenv().PlayerName
-
-local checkInterval = 3
-local recheckDelay = 5
+local checkInterval = 5
+local recheckDelay = 3
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = game.Players.LocalPlayer
@@ -57,14 +55,28 @@ end
 local function getAvailableServers()
     while true do
         local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", PlaceId)
+        print("[DEBUG] Obtendo lista de servidores de:", url)
+
         local success, response = pcall(function()
             return HttpService:JSONDecode(game:HttpGet(url))
         end)
 
         if success and response and response.data and #response.data > 0 then
+            print("[DEBUG] Servidores obtidos com sucesso! Quantidade de servidores:", #response.data)
             return response.data
         else
-            warn("Erro ao obter servidores. Tentando novamente...")
+            print("[ERRO] Falha ao obter servidores!")
+
+            if not success then
+                warn("[ERRO] Falha na requisição HTTP. Possível motivo: Exploit incompatível ou falha na API.")
+            elseif not response then
+                warn("[ERRO] Resposta vazia da API.")
+            elseif not response.data then
+                warn("[ERRO] Resposta da API não contém 'data'. Estrutura inesperada.")
+            elseif #response.data == 0 then
+                warn("[ERRO] Nenhum servidor disponível retornado pela API.")
+            end
+            
             task.wait(1)
         end
     end
@@ -75,6 +87,8 @@ local function serverHop()
 
     for _, server in ipairs(servers) do
         if server.id ~= currentJobId then
+            print("[DEBUG] Tentando teleportar para o servidor:", server.id)
+
             queueScriptOnTeleport()
             
             local teleportSuccess, errorMsg = pcall(function()
@@ -82,9 +96,11 @@ local function serverHop()
             end)
             
             if teleportSuccess then
+                print("[DEBUG] Teleporte bem-sucedido para:", server.id)
                 return
             else
-                warn("Erro ao teleportar: " .. errorMsg)
+                warn("[ERRO] Falha ao teleportar para o servidor:", server.id)
+                warn("[ERRO] Mensagem de erro:", errorMsg)
             end
         end
     end
@@ -103,13 +119,16 @@ local function checkForPlayer()
     end
 
     if not found then
+        print("[DEBUG] Jogador não encontrado. Fazendo server hop...")
         serverHop()
 
         task.wait(recheckDelay)
         if game.JobId == currentJobId then
-            warn("Ainda no mesmo servidor após teleportar. Tentando novamente...")
+            warn("[ERRO] Ainda no mesmo servidor após tentar teleportar. Tentando novamente...")
             serverHop()
         end
+    else
+        print("[DEBUG] Jogador encontrado! Permanecendo no servidor.")
     end
 end
 
